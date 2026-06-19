@@ -216,7 +216,8 @@ TEST(KernelTest, TestSupportsCommonUsbEthernetDongles) {
     EXPECT_TRUE(configVerifier.hasModule("CONFIG_USB_NET_CDCETHER"));
     EXPECT_TRUE(configVerifier.hasModule("CONFIG_USB_NET_CDC_EEM"));
     EXPECT_TRUE(configVerifier.hasModule("CONFIG_USB_NET_CDC_NCM"));
-    EXPECT_TRUE(configVerifier.hasModule("CONFIG_USB_NET_AQC111"));
+    if (bpf::isAtLeastKernelVersion(5, 4, 0))
+        EXPECT_TRUE(configVerifier.hasModule("CONFIG_USB_NET_AQC111"));
 
     EXPECT_TRUE(configVerifier.hasModule("CONFIG_USB_RTL8152"));
     EXPECT_TRUE(configVerifier.hasModule("CONFIG_USB_RTL8150"));
