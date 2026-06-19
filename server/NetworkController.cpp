@@ -662,18 +662,23 @@ int NetworkController::removeUsersFromNetwork(unsigned netId, const UidRanges& u
 }
 
 int NetworkController::addRoute(unsigned netId, const char* interface, const char* destination,
-                                const char* nexthop, int mtu, bool isLocalRoute) {
-    return modifyRoute(netId, interface, destination, nexthop, ROUTE_ADD, mtu, isLocalRoute);
+                                const char* nexthop, bool legacy, uid_t uid, int mtu,
+                                bool isLocalRoute) {
+    return modifyRoute(netId, interface, destination, nexthop, ROUTE_ADD, legacy, uid, mtu,
+                       isLocalRoute);
 }
 
 int NetworkController::updateRoute(unsigned netId, const char* interface, const char* destination,
-                                   const char* nexthop, int mtu, bool isLocalRoute) {
-    return modifyRoute(netId, interface, destination, nexthop, ROUTE_UPDATE, mtu, isLocalRoute);
+                                   const char* nexthop, bool legacy, uid_t uid, int mtu,
+                                   bool isLocalRoute) {
+    return modifyRoute(netId, interface, destination, nexthop, ROUTE_UPDATE, legacy, uid, mtu,
+                       isLocalRoute);
 }
 
 int NetworkController::removeRoute(unsigned netId, const char* interface, const char* destination,
-                                   const char* nexthop, bool isLocalRoute) {
-    return modifyRoute(netId, interface, destination, nexthop, ROUTE_REMOVE, 0, isLocalRoute);
+                                   const char* nexthop, bool legacy, uid_t uid, bool isLocalRoute) {
+    return modifyRoute(netId, interface, destination, nexthop, ROUTE_REMOVE, legacy, uid, 0,
+                       isLocalRoute);
 }
 
 void NetworkController::addInterfaceAddress(unsigned ifIndex, const char* address) {
@@ -977,8 +982,8 @@ int NetworkController::checkUserNetworkAccessLocked(uid_t uid, unsigned netId) c
 }
 
 int NetworkController::modifyRoute(unsigned netId, const char* interface, const char* destination,
-                                   const char* nexthop, enum RouteOperation op,
-                                   int mtu, bool isLocalRoute) {
+                                   const char* nexthop, enum RouteOperation op, bool legacy,
+                                   uid_t uid, int mtu, bool isLocalRoute) {
     ScopedRLock lock(mRWLock);
 
     if (!isValidNetworkLocked(netId)) {
@@ -998,6 +1003,12 @@ int NetworkController::modifyRoute(unsigned netId, const char* interface, const 
     RouteController::TableType tableType;
     if (netId == LOCAL_NET_ID) {
         tableType = RouteController::LOCAL_NETWORK;
+    } else if (legacy) {
+        if ((getPermissionForUserLocked(uid) & PERMISSION_SYSTEM) == PERMISSION_SYSTEM) {
+            tableType = RouteController::LEGACY_SYSTEM;
+        } else {
+            tableType = RouteController::LEGACY_NETWORK;
+        }
     } else {
         tableType = RouteController::INTERFACE;
     }

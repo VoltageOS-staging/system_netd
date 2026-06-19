@@ -931,13 +931,17 @@ int NdcDispatcher::NetworkCommand::runCommand(NdcClient* cli, int argc, char** a
     //
     // nexthop may be either an IPv4/IPv6 address or one of "unreachable" or "throw".
     if (!strcmp(argv[1], "route")) {
-        if (argc < 6 || argc > 7) {
+        if (argc < 6 || argc > 9) {
             return syntaxError(cli, "Incorrect number of arguments");
         }
 
         int nextArg = 2;
+        bool legacy = false;
+        uid_t uid = 0;
         if (!strcmp(argv[nextArg], "legacy")) {
-            return operationError(cli, "legacy routes no longer supported", EINVAL);
+            ++nextArg;
+            legacy = true;
+            PARSE_UINT_RETURN_IF_FAIL(cli, argv[nextArg++], uid, "Unknown argument", false);
         }
 
         bool add = false;
@@ -958,13 +962,20 @@ int NdcDispatcher::NetworkCommand::runCommand(NdcClient* cli, int argc, char** a
         const char* nexthop = argc > nextArg ? argv[nextArg] : "";
 
         Status status;
-        android::net::RouteInfoParcel parcel;
-        parcel.ifName = interface;
-        parcel.destination = destination;
-        parcel.nextHop = nexthop;
+        if (legacy) {
+            status = add ? mNetd->networkAddLegacyRoute(netId, interface, destination, nexthop, uid)
 
-        status = add ? mNetd->networkAddRouteParcel(netId, parcel)
-                     : mNetd->networkRemoveRouteParcel(netId, parcel);
+                         : mNetd->networkRemoveLegacyRoute(netId, interface, destination, nexthop,
+                                                           uid);
+        } else {
+            android::net::RouteInfoParcel parcel;
+            parcel.ifName = interface;
+            parcel.destination = destination;
+            parcel.nextHop = nexthop;
+
+            status = add ? mNetd->networkAddRouteParcel(netId, parcel)
+                         : mNetd->networkRemoveRouteParcel(netId, parcel);
+        }
 
         if (!status.isOk()) {
             return operationError(cli, add ? "addRoute() failed" : "removeRoute() failed",
