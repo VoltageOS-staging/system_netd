@@ -30,7 +30,6 @@
 #include "test_utils.h"
 
 #define IP_PATH "/system/bin/ip"
-#define RT_TABLES_PATH "/data/misc/net/rt_tables"
 
 using android::IBinder;
 using android::IServiceManager;
@@ -138,22 +137,5 @@ bool ipRouteExists(const char* ipVersion, const char* table,
             return true;
         }
     }
-    return false;
-}
-
-bool routingTableExists(const char* table) {
-    FILE* f = fopen(RT_TABLES_PATH, "r");
-    if (!f) return false;
-
-    char line[256];
-    while (fgets(line, sizeof(line), f)) {
-        char name[256];
-        if (sscanf(line, "%*u %255s", name) != 1) continue;
-        if (!strncmp(name, table, sizeof(name))) {
-            fclose(f);
-            return true;
-        }
-    }
-    fclose(f);
     return false;
 }

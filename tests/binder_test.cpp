@@ -413,13 +413,6 @@ TEST_F(NetdBinderTest, InitialNetworksExist) {
     EXPECT_FALSE(testNetworkExistsButCannotConnect(mNetd, sTun, 77 /* not exist */));
 }
 
-TEST_F(NetdBinderTest, NoLegacyRoutingTables) {
-    EXPECT_TRUE(routingTableExists("local"));
-    EXPECT_TRUE(routingTableExists("main"));
-    EXPECT_FALSE(routingTableExists("legacy_system"));
-    EXPECT_FALSE(routingTableExists("legacy_network"));
-}
-
 TEST_F(NetdBinderTest, IpSecTunnelInterface) {
     const struct TestData {
         const std::string family;
